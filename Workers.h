@@ -1,7 +1,3 @@
-//
-// Created by Endré Hadzalic on 02.03.2021.
-//
-
 #ifndef OVING4_WORKERS_H
 #define OVING4_WORKERS_H
 
