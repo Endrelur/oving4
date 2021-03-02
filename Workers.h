@@ -10,7 +10,6 @@
 #include <list>
 #include <vector>
 #include <functional>
-
 #include <condition_variable>
 
 #include <thread>
@@ -30,13 +29,15 @@ public:
 
 private:
     atomic<bool> running;
-
+    atomic_bool waiting;
     int n_threads;
     vector<thread> worker_threads;
 
     list<function<void()>> tasks;
     condition_variable cv;
+    condition_variable wait_cv;
     mutex tasks_mutex;
+    mutex wait_mutex;
 
     void create_workers();
     void create_worker();

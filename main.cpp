@@ -39,6 +39,13 @@ int main() {
              << endl;
     });
 
+    worker_threads.post_timeout([]{
+        cout << "task E"
+             << " runs in worker_thread "
+             << this_thread::get_id()
+             << endl;
+    }, 3);
+
     worker_threads.join(); // Calls join() on the worker threads
     event_loop.join(); // Calls join() on the event thread
 }
