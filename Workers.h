@@ -10,32 +10,29 @@
 #include <functional>
 #include <mutex>
 #include <atomic>
+#include <list>
+#include <condition_variable>
+
 
 using namespace std;
 
+ list <function<void()>> functionQueue;
+ vector<thread> threads;
+ mutex taskMutex;
+ condition_variable cv;
+ atomic<bool> running;
+ int amountOfThreads;
 
 class Workers {
-private:
-    static list<function<void()>> functionQueue;
-    static vector<thread> threads;
-    static mutex taskMutex;
-    static condition_variable cv;
-    static atomic<bool> running;
-    static int amountOfThreads;
 
 public:
-    /**
-     *
-     * @param threadAmount
-     */
+
     Workers(int threadAmount) {
         amountOfThreads = threadAmount;
         running = false;
     }
 
-    /**
-     *
-     */
+
     void start() {
         running = true;
         for (int i = 0; i < amountOfThreads; ++i) {
@@ -51,6 +48,7 @@ public:
                             functionQueue.pop_front();
                         }
                     }
+
                     if (task) {
                         task();
                     }
@@ -59,19 +57,12 @@ public:
         }
     }
 
-    /**
-     *
-     * @param func
-     */
     void post(function<void()> func) {
         unique_lock<mutex> lock(taskMutex);
         functionQueue.emplace_back(func);
         cv.notify_one();
     }
 
-    /**
-     *
-     */
     void join() {
         stop();
         for (thread &thread : threads) {

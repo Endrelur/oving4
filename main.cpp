@@ -1,6 +1,8 @@
 #include <iostream>
 #include "Workers.h"
 
+using namespace std;
+
 int main() {
     Workers worker_threads(4);
     Workers event_loop(1);
@@ -13,18 +15,21 @@ int main() {
              << endl;
 
     });
+
     worker_threads.post([] { // Task B
         cout << "task B"
              << " runs in worker_thread "
              << this_thread::get_id()
              << endl;
     });
+
     event_loop.post([] { // Task C
         cout << "task C"
              << " runs in event_loop "
              << this_thread::get_id()
              << endl;
     });
+
     event_loop.post([] { // Task D
 
         cout << "task D"
@@ -33,6 +38,7 @@ int main() {
              << endl;
 
     });
+
     worker_threads.join(); // Calls join() on the worker threads
     event_loop.join(); // Calls join() on the event thread
 }
