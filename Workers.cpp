@@ -3,19 +3,17 @@
 Workers::Workers(int n_threads) {
     this->n_threads = n_threads;
     running = false;
-    waiting = false;
 }
 
 void Workers::post_timeout(function<void()> func, int time) {
-    thread th([this, &time, &func] {
-        waiting = true;
+    post([this, time, &func] {
         this_thread::sleep_for(chrono::seconds(time));
-        cout << "thread waited " << time
-             << " seconds before posting" << endl;
-        post(func);
-        waiting = false;
+        cout << "thread "
+             << this_thread::get_id()
+             << " waited" << time
+             << "seconds before posting" << endl;
+        func();
     });
-    th.join();
 }
 
 void Workers::post(function<void()> task) {
@@ -43,12 +41,14 @@ void Workers::create_worker() {
             function<void()> task;
             {
                 unique_lock<mutex> lock(tasks_mutex);
+                while (tasks.empty() && running)
+                    cv.wait(lock);
+
                 if (!tasks.empty()) {
                     task = *tasks.begin();
                     tasks.pop_front();
-                } else {
-                    cv.wait(lock);
                 }
+
 
             }
             if (task)
@@ -66,15 +66,8 @@ void Workers::join() {
 }
 
 void Workers::stop() {
-    if (waiting) {
-        thread th([this] {
-            while (waiting) {
-                this_thread::sleep_for(chrono::milliseconds(20));
-            }
-        });
-        th.join();
-    }
     running = false;
     cv.notify_all();
+
 
 }

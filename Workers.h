@@ -18,25 +18,28 @@ class Workers {
 
 public:
     Workers(int n_threads);
+
     void post(function<void()> task);
+
     void start();
+
     void join();
-    void post_timeout(function<void()> func,int time);
+
+    void post_timeout(function<void()> func, int time);
 
 private:
     atomic<bool> running;
-    atomic_bool waiting;
     int n_threads;
     vector<thread> worker_threads;
 
     list<function<void()>> tasks;
     condition_variable cv;
-    condition_variable wait_cv;
     mutex tasks_mutex;
-    mutex wait_mutex;
 
     void create_workers();
+
     void create_worker();
+
     void stop();
 };
 
