@@ -69,7 +69,7 @@ void Workers::stop() {
     if (waiting) {
         thread th([this] {
             while (waiting) {
-                this_thread::sleep_for(20ms);
+                this_thread::sleep_for(chrono::milliseconds(20));
             }
         });
         th.join();
