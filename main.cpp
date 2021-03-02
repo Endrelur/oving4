@@ -21,22 +21,22 @@ int main() {
              << " runs in worker_thread "
              << this_thread::get_id()
              << endl;
+
     });
 
     event_loop.post([] { // Task C
         cout << "task C"
-             << " runs in event_loop "
+             << " runs in event_loop_thread "
              << this_thread::get_id()
              << endl;
+
     });
 
     event_loop.post([] { // Task D
-
         cout << "task D"
-             << " runs in event_loop "
+             << " runs in event_loop_thread "
              << this_thread::get_id()
              << endl;
-
     });
 
     worker_threads.join(); // Calls join() on the worker threads

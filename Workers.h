@@ -5,80 +5,42 @@
 #ifndef OVING4_WORKERS_H
 #define OVING4_WORKERS_H
 
-#include <thread>
+#include <iostream>
+
+#include <list>
 #include <vector>
 #include <functional>
-#include <mutex>
-#include <atomic>
-#include <list>
+
 #include <condition_variable>
 
+#include <thread>
+#include <mutex>
+#include <atomic>
 
 using namespace std;
-
- list <function<void()>> functionQueue;
- vector<thread> threads;
- mutex taskMutex;
- condition_variable cv;
- atomic<bool> running;
- int amountOfThreads;
 
 class Workers {
 
 public:
-
-    Workers(int threadAmount) {
-        amountOfThreads = threadAmount;
-        running = false;
-    }
-
-
-    void start() {
-        running = true;
-        for (int i = 0; i < amountOfThreads; ++i) {
-            threads.emplace_back([] {
-                while (running) {
-                    function<void()> task;
-                    {
-                        unique_lock<mutex> lock(taskMutex);
-                        if (functionQueue.empty()) {
-                            cv.wait(lock);
-                        } else {
-                            task = *functionQueue.begin();
-                            functionQueue.pop_front();
-                        }
-                    }
-
-                    if (task) {
-                        task();
-                    }
-                }
-            });
-        }
-    }
-
-    void post(function<void()> func) {
-        unique_lock<mutex> lock(taskMutex);
-        functionQueue.emplace_back(func);
-        cv.notify_one();
-    }
-
-    void join() {
-        stop();
-        for (thread &thread : threads) {
-            thread.join();
-        }
-    }
+    Workers(int n_threads);
+    void post(function<void()> task);
+    void start();
+    void join();
+    void post_timeout(function<void()> func,int time);
 
 private:
+    atomic<bool> running;
 
-    void stop() {
-        running = false;
-        cv.notify_all();
-    }
+    int n_threads;
+    vector<thread> worker_threads;
 
+    list<function<void()>> tasks;
+    condition_variable cv;
+    mutex tasks_mutex;
 
+    void create_workers();
+    void create_worker();
+    void stop();
 };
-
 
 #endif //OVING4_WORKERS_H
