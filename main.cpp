@@ -1,77 +1,41 @@
 #include <iostream>
-#include <list>
-#include <condition_variable>
-#include <vector>
 #include "Workers.h"
-#include <thread>
-
-
-using namespace std;
-
-
-list<function<void()>> functionQueue;
-vector<thread> threads;
-mutex taskMutex;
-condition_variable cv;
-atomic<bool> running;
-int amountOfThreads;
-
-
-void start() {
-    running = true;
-    for (int i = 0; i < amountOfThreads; ++i) {
-        threads.emplace_back([] {
-            while (running) {
-                function<void()> task;
-                {
-                    unique_lock<mutex> lock(taskMutex);
-                    if (!functionQueue.empty()) {
-                        task = *functionQueue.begin();
-                        functionQueue.pop_front();
-                    } else {
-                        cv.wait(lock);
-                    }
-                }
-                if (task) {
-                    task();
-                }
-            }
-        });
-    }
-}
-
-
-void post(function<void()> func) {
-    unique_lock<mutex> lock(taskMutex);
-    functionQueue.emplace_back(func);
-    cv.notify_one();
-}
-
-void stop() {
-    running = false;
-    cv.notify_all();
-}
-
-void join() {
-    stop();
-    for (thread &thread : threads) {
-        thread.join();
-    }
-}
-
 
 int main() {
-    amountOfThreads = 4;
-    start();
-    for (static int i = 0; i < 5; i++) {
-        post([] {
-            cout << "task " << i
-                 << " runs in thread "
-                 << this_thread::get_id()
-                 << endl;
-        });
+    Workers worker_threads(4);
+    Workers event_loop(1);
+    worker_threads.start(); // Create 4 internal threads
+    event_loop.start(); // Create 1 internal thread
+    worker_threads.post([] { //Task A
+        cout << "task A"
+             << " runs in worker_thread "
+             << this_thread::get_id()
+             << endl;
 
-    }
-    join();
+    });
+    worker_threads.post([] { // Task B
+        cout << "task B"
+             << " runs in worker_thread "
+             << this_thread::get_id()
+             << endl;
+    });
+    event_loop.post([] { // Task C
+        cout << "task C"
+             << " runs in event_loop "
+             << this_thread::get_id()
+             << endl;
+    });
+    event_loop.post([] { // Task D
+
+        cout << "task D"
+             << " runs in event_loop "
+             << this_thread::get_id()
+             << endl;
+
+    });
+    worker_threads.join(); // Calls join() on the worker threads
+    event_loop.join(); // Calls join() on the event thread
 }
+
+
 
